@@ -1,6 +1,8 @@
 const path = require('path')
 const express = require('express')
 const hbs = require('hbs')
+const geocode = require('./utils/geocode.js')
+const forecast = require('./utils/forecast') //no need to put .js extension?
 
 // express is a function that is called to make a new express application
 const app = express()
@@ -27,6 +29,10 @@ hbs.registerPartials(partialsPath)
 
 //Set up static directory to serve (looks for index.html for the rool of the webapp)
 app.use(express.static(publicDirectoryPath))
+
+// Rendering an HTML file instead 
+// res.render('index.html') <- This is static however and cant pass objects to it
+// Handlebars (hbs) makes it easy to create dynamic pages with express js
 
 app.get('', (req, res) => {
     //use render to render a view (hbs template)
@@ -70,10 +76,24 @@ app.get('/weather', (req, res) => {
             error: 'You must provide an address'
         })
     }
-    res.send({
-        forecast: 'Cloudy with a chance of meatballs',
-        location: 'North Dakota',
-        address: req.query.address
+
+    geocode(req.query.address, (error, {latitude, longitude, location}= {}) => {
+        if(error){
+            return res.send({
+                error: error
+            })
+        }
+        forecast(latitude, longitude, (error, forecastData) => {
+            if(error) {
+                return res.send({error}) //same as above since the 'error' name is same left and right side
+            }
+            
+            res.send({
+                forecast: forecastData,
+                location, // or location: location,
+                address: req.query.address
+            })
+        })
     })
 })
 
@@ -82,6 +102,8 @@ app.get('/products', (req, res) => {
         return res.send({
             error: 'You must provide a search term'
         })
+        //Should return because cannot send multiple responses in JS
+        // Will get "cannot set header after..." error
     }
 
     console.log(req.query.search)

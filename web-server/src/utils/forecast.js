@@ -24,11 +24,12 @@ const forecast = (latitude, longitude, callback) => {
       }
       else{
         // CHALLENGE 1
-        callback(undefined, {
+        forecastData = body.daily.data[0].summary + ' It is currently ' + body.currently.temperature + ' degrees out. ' + 'There is a ' + body.currently.precipProbability + '% chance of precipitation.'
+        callback(undefined, forecastData) /*{
           summary: body.daily.data[0].summary,
           temperature: body.currently.temperature,
           precip_probability: body.currently.precipProbability
-        })
+        })*/
       }
     });
   }

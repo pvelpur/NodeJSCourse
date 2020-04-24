@@ -37,8 +37,11 @@ console.log(stock)
 console.log(rating)
 
 // Can destructure directly in function call
-const transaction = (type, { label, stock }) => {
+const transaction = (type, { label, stock = 0 } = {}) => {
     console.log(type, label, stock)
 }
 
 transaction('order', product)
+
+// This can work becuase we set a default for the second parameter to be undefined object
+transaction('order')
