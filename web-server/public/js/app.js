@@ -29,7 +29,8 @@ weatherForm.addEventListener('submit', (e) => {
     mesTwo.textContent = ''
 
     //Actual Code
-    fetch('http://localhost:3000/weather?address='+location).then((response) => {
+    // Didnt provide entire url so it can distiguish btwn heroku or localhost
+    fetch('/weather?address='+location).then((response) => {
         response.json().then((data) => {
             if(data.error)
             {
