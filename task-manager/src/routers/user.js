@@ -1,5 +1,6 @@
 const express = require('express')
 const User = require('../models/user')
+const auth = require('../middleware/auth')
 const router = new express.Router()
 
 //Middleware (mongoose documentation)
@@ -20,29 +21,59 @@ router.post('/users', async (request, response) => {
     //USING AWAIT NOW
     try{
         await user.save()
-        response.status(201).send(user)
+        const token = await user.generateAuthToken()
+        response.status(201).send({user, token})
     } catch(e) {
         response.status(400).send(e)
-    }
+    }''
 
 })
 
 //Http request to login with user credentials + validation check
 //login request should send back an authentication token that can be used later for other non-public requests
+//JWT => JSON Web Token ... tokens can expire or not + other features
+// npm module => jsonwebtoken
 router.post('/users/login', async (req, res) => {
     try {
         // Creating our own functions for user model
         const user = await User.findByCredentials(req.body.email, req.body.password)
-        res.send(user)
+        const token = await user.generateAuthToken()
+        res.send({user, token})
     } catch (e) {
         res.status(400).send()
+    }
+})
+
+//Need to be logged in, in order to be able to log out, so do auth check
+router.post('/users/logout', auth, async (req, res)=> {
+    try{
+        req.user.tokens = req.user.tokens.filter((token) => {
+            return token.token !== req.token //is they are equal, then it will return false, and remove it from the array
+        })
+        await req.user.save()
+
+        res.send()
+    } catch (e) {
+        res.status(500).send()
+    }
+})
+
+router.post('/users/logoutAll', auth, async (req, res)=> {
+    try{
+        req.user.tokens = []
+        await req.user.save()
+
+        res.send()
+    } catch (e) {
+        res.status(500).send()
     }
 })
 
 // ONLY 2 ROUTES THAT WILL STAY PUBLIC ARE LOGIN AND SIGNUP, REST WILL REQUIRE USER TO BE LOGGED IN
 
 //To get all the users
-router.get('/users', async (req, res) => {
+//To add middleware, we pass it in arguement before the route handler
+router.get('/users/me', auth, async (req, res) => {
     // look up mongoose queries to get mongoose CRUD operations
     // User.find({}).then((users) => {
     //     res.send(users)
@@ -50,45 +81,48 @@ router.get('/users', async (req, res) => {
     //     res.status(500).send()
     // })
     //USING AWAIT
-    try{
-        const users = await User.find({})
-        res.send(users)
-    }catch(e) {
-        res.status(500).send()
-    }
+    // try{
+    //     const users = await User.find({})
+    //     res.send(users)
+    // }catch(e) {
+    //     res.status(500).send()
+    // }
+
+    res.send(req.user)
+
 })
 
 //To get individual/specific user
 // using route parameters
-router.get('/users/:id', async (req, res) => {
-    //console.log(req.params)
-    const _id = req.params.id
-    //look up mongoose queries
-    // User.findById(_id).then((user) => {
-    //     //might not always have user with id
-    //     if(!user){
-    //         return res.status(404).send()
-    //     }
-    //     res.send(user)
+// router.get('/users/:id', async (req, res) => {
+//     //console.log(req.params)
+//     const _id = req.params.id
+//     //look up mongoose queries
+//     // User.findById(_id).then((user) => {
+//     //     //might not always have user with id
+//     //     if(!user){
+//     //         return res.status(404).send()
+//     //     }
+//     //     res.send(user)
         
-    // }).catch((e) => {
-    //     res.status(500).send()
-    // })
-    //ASYNC AWAIT
-    try {
-        const user = await User.findById(_id)
-        if(!user){
-            return res.status(404).send()
-        }
-        res.send(user)
-    }catch(e){
-        res.status(500).send()
-    }
+//     // }).catch((e) => {
+//     //     res.status(500).send()
+//     // })
+//     //ASYNC AWAIT
+//     try {
+//         const user = await User.findById(_id)
+//         if(!user){
+//             return res.status(404).send()
+//         }
+//         res.send(user)
+//     }catch(e){
+//         res.status(500).send()
+//     }
 
-})
+// })
 
 //update existing resource
-router.patch('/users/:id', async (req, res) => {
+router.patch('/users/me', auth, async (req, res) => {
     //Code to prevent ppl from updating things that dont exist or they
     // are not allowed to update (like _id)
     const updates = Object.keys(req.body)
@@ -101,20 +135,18 @@ router.patch('/users/:id', async (req, res) => {
 
     try{
         //update will bypass mongoose middleware, so we need to do this instead...
-        const user = await User.findById(req.params.id)
+        //const user = await User.findById(req.params.id)
         updates.forEach((update) => {
             //use bracket notation to access attribute DYNAMICALLY
-            user[update] = req.body[update]
+            req.user[update] = req.body[update]
         })
-        await user.save()
+        await req.user.save()
 
         //mongoose method to update => the update ones
         //const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators:true })
         //3 things could happen, update went well, went poorly, or user to update doesnt exist
-        if(!user){
-            return res.status(404).send()
-        }
-        res.send(user)
+    
+        res.send(req.user)
     }
     catch (e) {
         res.status(400).send(e)
@@ -122,13 +154,15 @@ router.patch('/users/:id', async (req, res) => {
 })
 
 //DELETE existing resourse
-router.delete('/users/:id', async (req, res) => {
+router.delete('/users/me', auth, async (req, res) => {
     try {
-        const user = await User.findByIdAndDelete(req.params.id)
-        if(!user) {
-            return res.status(404).send()
-        }
-        res.send(user)
+        // const user = await User.findByIdAndDelete(req.user._id) //we attached the user to the request object through the middleware (auth)
+        // if(!user) {
+        //     return res.status(404).send()
+        // }
+
+        await req.user.remove()
+        res.send(req.user)
     } catch (e) {
         res.status(500).send()
     }

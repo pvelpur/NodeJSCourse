@@ -5,7 +5,12 @@ const Task = mongoose.model('Task', {
         type: String,
         trim:true, required: true
     },
-    completed: {type: Boolean, default:false,}
+    completed: {type: Boolean, default:false,},
+    owner: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        ref: 'User' //mongoose referece to a model
+    }
 })
 
 // const task1 = new Task({
