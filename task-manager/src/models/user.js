@@ -49,6 +49,8 @@ const userSchema = new mongoose.Schema({
             required: true
         }
     }]
+}, {
+    timestamps: true // default option is false
 })
 
 //Virtual Property -> relationship btwn 2 entities
