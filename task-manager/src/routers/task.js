@@ -27,9 +27,12 @@ router.post('/tasks', auth, async (req, res) => {
 
 })
 
+// FILTERING
 // GET /tasks?completed=true
-// for pagination => limit and skip
+// PAGINATION => limit and skip
 // GET /tasks?limit=10&skip=0
+//SORTING
+// GET /tasks?sortBy=createdAt_desc (or asc) (ascending vs descending)
 router.get('/tasks', auth, async (req, res) => {
     // Task.find({}).then((tasks) => {
     //     res.send(tasks)
@@ -38,9 +41,15 @@ router.get('/tasks', auth, async (req, res) => {
     // })
 
     const match = {}
+    const sort = {}
 
     if(req.query.completed) {
         match.completed = (req.query.completed === 'true')
+    }
+
+    if(req.query.sortBy) {
+        const parts = req.query.sortBy.split('_')
+        sort[parts[0]] = parts[1] === 'asc' ? 1 : -1
     }
 
     //ASYNC/AWAIT
@@ -54,7 +63,11 @@ router.get('/tasks', auth, async (req, res) => {
             //for pagination
             options: {
                 limit: parseInt(req.query.limit), //if it's not provided or not a number, itll be ignored by mongoose
-                skip: parseInt(req.query.skip)
+                skip: parseInt(req.query.skip),
+                sort: sort /*{
+                    completed: 1 //ascending
+                    //createdAt: -1 //descending
+                }*/
             }
         }).execPopulate()
 
