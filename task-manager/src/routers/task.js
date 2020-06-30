@@ -28,6 +28,8 @@ router.post('/tasks', auth, async (req, res) => {
 })
 
 // GET /tasks?completed=true
+// for pagination => limit and skip
+// GET /tasks?limit=10&skip=0
 router.get('/tasks', auth, async (req, res) => {
     // Task.find({}).then((tasks) => {
     //     res.send(tasks)
@@ -47,7 +49,13 @@ router.get('/tasks', auth, async (req, res) => {
         //Other way (right way)
         await req.user.populate({
             path: 'tasks',
-            match
+            //for filtering
+            match,
+            //for pagination
+            options: {
+                limit: parseInt(req.query.limit), //if it's not provided or not a number, itll be ignored by mongoose
+                skip: parseInt(req.query.skip)
+            }
         }).execPopulate()
 
         res.send(req.user.tasks)
