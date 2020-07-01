@@ -22,6 +22,36 @@ const port = process.env.PORT || 3000
 //     res.status(503).send('Site is currently down. Check back soon!')
 // })
 
+/****************************************************************/
+// EXAMPLE USING MULTER => used for file uploads
+const multer = require('multer')
+const upload = multer({
+    //configurations
+    dest: 'images',
+    limits : {
+        fileSize: 1000000 // 1MB
+    },
+    fileFilter(req, file, cb) {
+        //using regex to match
+        if(!file.originalname.match(/\.(doc|docx)$/)) {
+            return cb(new Error('Please upload a word document'))
+        }
+        cb(undefined, true)
+
+        // cb(new Error('')) //if error
+        // cb(undefined, true) // if things go well and accept file
+        // cb(undefined, true) // if things go well but reject file
+    }
+})
+
+app.post('/upload', upload.single('upload'), (req, res) => {
+    res.send()
+}, (error, req, res, next) => {
+    res.status(400).send({error: error.message})
+})
+
+
+
 //configure express to autimatically parse the incoming JSON for us
 // so we have it accessible as a object we can use
 app.use(express.json())
@@ -88,7 +118,7 @@ app.listen(port, () => {
 //     console.log(data)
 // }
 
-//EXAMPLE
+//EXAMPLE (Populate)
 // const Task = require('./models/task')
 // const User = require('./models/user')
 // const main = async () => {

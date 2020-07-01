@@ -1,6 +1,8 @@
 const express = require('express')
 const User = require('../models/user')
 const auth = require('../middleware/auth')
+const multer = require('multer')
+
 const router = new express.Router()
 
 //Middleware (mongoose documentation)
@@ -90,6 +92,53 @@ router.get('/users/me', auth, async (req, res) => {
 
     res.send(req.user)
 
+})
+
+const upload = multer({
+    limits:{
+        fileSize: 1000000
+    },
+    fileFilter(req, file, cb) {
+        if(!file.originalname.match(/\.(jpg|jpeg|png)$/)){
+            cb(new Error('Please upload an image file (jpg, jpeg, or png)'))
+        }
+        cb(undefined, true)
+    }
+    
+})
+
+// POST for avatar uploads
+router.post('/users/me/avatar', auth, upload.single('avatar'), async (req, res) => {
+    //if theres not dest property on multer, u can access the file on req.file
+    req.user.avatar = req.file.buffer
+    await req.user.save()
+    res.send()
+}, (error, req, res, next) => {
+    res.status(400).send({error: error.message})
+})
+
+router.delete('/users/me/avatar', auth, async (req, res) => {
+    req.user.avatar = undefined
+    await req.user.save()
+    res.send()
+})
+
+router.get('/users/:id/avatar', async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id)
+
+        if (!user || !user.avatar) {
+            throw new Error()
+        }
+        //if things go well
+        // need to tell requester what type of data they getting back (like jpg or png)
+        // can be done by setting a response header
+        res.set('Content-Type', 'image/jpg')
+        res.send(user.avatar)
+
+    }catch (e) {
+        res.status(404).send()
+    }
 })
 
 //To get individual/specific user
