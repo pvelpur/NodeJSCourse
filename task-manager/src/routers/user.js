@@ -1,8 +1,9 @@
 const express = require('express')
+const multer = require('multer')
+const sharp = require('sharp')
 const User = require('../models/user')
 const auth = require('../middleware/auth')
-const multer = require('multer')
-
+const { sendWelcomeEmail, sendCancellationEmail } = require('../emails/account')
 const router = new express.Router()
 
 //Middleware (mongoose documentation)
@@ -23,6 +24,7 @@ router.post('/users', async (request, response) => {
     //USING AWAIT NOW
     try{
         await user.save()
+        sendWelcomeEmail(user.email, user.name)
         const token = await user.generateAuthToken()
         response.status(201).send({user, token})
     } catch(e) {
@@ -110,7 +112,11 @@ const upload = multer({
 // POST for avatar uploads
 router.post('/users/me/avatar', auth, upload.single('avatar'), async (req, res) => {
     //if theres not dest property on multer, u can access the file on req.file
-    req.user.avatar = req.file.buffer
+    //req.user.avatar = req.file.buffer
+
+    const buffer = await sharp(req.file.buffer).resize({width: 250, height: 250}).png().toBuffer()
+    req.user.avatar = buffer
+
     await req.user.save()
     res.send()
 }, (error, req, res, next) => {
@@ -133,7 +139,7 @@ router.get('/users/:id/avatar', async (req, res) => {
         //if things go well
         // need to tell requester what type of data they getting back (like jpg or png)
         // can be done by setting a response header
-        res.set('Content-Type', 'image/jpg')
+        res.set('Content-Type', 'image/png')
         res.send(user.avatar)
 
     }catch (e) {
@@ -211,6 +217,7 @@ router.delete('/users/me', auth, async (req, res) => {
         // }
 
         await req.user.remove()
+        sendCancellationEmail(req.user.email, req.user.name)
         res.send(req.user)
     } catch (e) {
         res.status(500).send()

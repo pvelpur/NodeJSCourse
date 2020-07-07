@@ -4,7 +4,7 @@ const userRouter = require('./routers/user')
 const taskRouter = require('./routers/task')
 
 const app = express()
-const port = process.env.PORT || 3000
+const port = process.env.PORT
 
 //register a new middleware function to run
 // app.use((req, res, next) => {
@@ -24,33 +24,33 @@ const port = process.env.PORT || 3000
 
 /****************************************************************/
 // EXAMPLE USING MULTER => used for file uploads
-const multer = require('multer')
-const upload = multer({
-    //configurations
-    dest: 'images',
-    limits : {
-        fileSize: 1000000 // 1MB
-    },
-    fileFilter(req, file, cb) {
-        //using regex to match
-        if(!file.originalname.match(/\.(doc|docx)$/)) {
-            return cb(new Error('Please upload a word document'))
-        }
-        cb(undefined, true)
+// const multer = require('multer')
+// const upload = multer({
+//     //configurations
+//     dest: 'images',
+//     limits : {
+//         fileSize: 1000000 // 1MB
+//     },
+//     fileFilter(req, file, cb) {
+//         //using regex to match
+//         if(!file.originalname.match(/\.(doc|docx)$/)) {
+//             return cb(new Error('Please upload a word document'))
+//         }
+//         cb(undefined, true)
 
-        // cb(new Error('')) //if error
-        // cb(undefined, true) // if things go well and accept file
-        // cb(undefined, true) // if things go well but reject file
-    }
-})
+//         // cb(new Error('')) //if error
+//         // cb(undefined, true) // if things go well and accept file
+//         // cb(undefined, true) // if things go well but reject file
+//     }
+// })
 
-app.post('/upload', upload.single('upload'), (req, res) => {
-    res.send()
-}, (error, req, res, next) => {
-    res.status(400).send({error: error.message})
-})
+// app.post('/upload', upload.single('upload'), (req, res) => {
+//     res.send()
+// }, (error, req, res, next) => {
+//     res.status(400).send({error: error.message})
+// })
 
-
+/****************************************************************/
 
 //configure express to autimatically parse the incoming JSON for us
 // so we have it accessible as a object we can use
