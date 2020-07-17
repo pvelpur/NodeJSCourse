@@ -17,7 +17,8 @@ socket.on('message', (msg) => {
     console.log(msg)
     //stores the final html we will actually render in browser
     const html = Mustache.render(messageTemplate, {
-        message: msg
+        message: msg.text,
+        createdAt: moment(msg.createdAt).format('h:mm A')
     })
     messages.insertAdjacentHTML('beforeend', html)
 })
@@ -25,7 +26,8 @@ socket.on('message', (msg) => {
 socket.on('locationMessage', (locationURL) => {
     console.log(locationURL)
     const html = Mustache.render(locationMsgTemplate, {
-        url: locationURL
+        url: locationURL,
+        createdAt: moment(locationURL.createdAt).format('h:mm A')
     })
     messages.insertAdjacentHTML('beforeend', html)
 })
