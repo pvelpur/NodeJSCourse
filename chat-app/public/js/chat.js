@@ -12,6 +12,8 @@ const messages = document.querySelector('#messages')
 const messageTemplate = document.querySelector('#message-template').innerHTML
 const locationMsgTemplate = document.querySelector('#locationMsg-template').innerHTML
 
+// Options
+const {username, room} = Qs.parse(location.search, { ignoreQueryPrefix:true }) // removes question mark and creates object
 
 socket.on('message', (msg) => {
     console.log(msg)
@@ -23,11 +25,11 @@ socket.on('message', (msg) => {
     messages.insertAdjacentHTML('beforeend', html)
 })
 
-socket.on('locationMessage', (locationURL) => {
-    console.log(locationURL)
+socket.on('locationMessage', (message) => {
+    console.log(message.url)
     const html = Mustache.render(locationMsgTemplate, {
-        url: locationURL,
-        createdAt: moment(locationURL.createdAt).format('h:mm A')
+        url: message.url,
+        createdAt: moment(message.createdAt).format('h:mm A')
     })
     messages.insertAdjacentHTML('beforeend', html)
 })
@@ -68,3 +70,5 @@ locationButton.addEventListener('click', () => {
     })
 
 })
+
+socket.emit('join', { username, room })

@@ -18,8 +18,15 @@ app.use(express.static(publicDirectoryPath))
 io.on('connection', (socket) => {
     //socket is an object that contains info about the new connection
     console.log('new websocket connection')
-    socket.emit('message', generateMessage('Welcome!'))
-    socket.broadcast.emit('message', generateMessage('A new user has joined!'))
+
+    socket.on('join', ({ username, room }) => {
+        socket.join(room) //server side only function that allows for new ways of emitting to clients (only clients in the room)
+        socket.emit('message', generateMessage('Welcome!'))
+        socket.broadcast.to(room).emit('message', generateMessage(`${username} has joined`))
+
+        // socket.emit, io.emit, socket.broadcast.emit
+        // with rooms => io.to.emit, socket.broadcast.to.emit (limits to specific chat room)
+    })
 
     socket.on('sendMessage', (message, callback) => {
         const filter = new Filter()
@@ -28,7 +35,7 @@ io.on('connection', (socket) => {
             return callback('Profanity is not allowed')
         }
 
-        io.emit('message', generateMessage(message))
+        io.to('Chicago').emit('message', generateMessage(message))
         callback()
     })
 
